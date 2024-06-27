@@ -2,7 +2,6 @@
 
 #include "core/executor.hpp"
 #include "core/async.hpp"
-#include "algorithm/critical.hpp"
 
 /**
 @dir taskflow
@@ -33,12 +32,17 @@
 // TF_VERSION / 100 % 1000 is the minor version
 // TF_VERSION / 100000 is the major version
 
-// current version: 3.7.0
-#define TF_VERSION 300700
+// current version: 3.8.0
+#define TF_VERSION 300800
 
 #define TF_MAJOR_VERSION TF_VERSION/100000
 #define TF_MINOR_VERSION TF_VERSION/100%1000
 #define TF_PATCH_VERSION TF_VERSION%100
+
+// Macros to fine-tune the performance of Taskflow at compile time
+//
+// + TF_ENABLE_TASK_POOL      : enable task pool optimization
+// + TF_ENABLE_ATOMIC_NOTIFIER: enable atomic notifier (required C++20)
 
 /**
 @brief taskflow namespace
@@ -57,7 +61,7 @@ namespace detail { }
 Release notes are available here: https://taskflow.github.io/taskflow/Releases.html
 */
 constexpr const char* version() {
-  return "3.7.0";
+  return "3.8.0";
 }
 
 

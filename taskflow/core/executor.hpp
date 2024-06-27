@@ -1037,26 +1037,27 @@ class Executor {
   
   std::mutex _wsq_mutex;
   std::mutex _taskflows_mutex;
+  
+  std::vector<std::thread> _threads;
+  std::vector<Worker> _workers;
+  DefaultNotifier _notifier;
 
 #ifdef __cpp_lib_atomic_wait
   std::atomic<size_t> _num_topologies {0};
   std::atomic_flag _all_spawned = ATOMIC_FLAG_INIT;
+  std::atomic_flag _done = ATOMIC_FLAG_INIT; 
 #else
   std::condition_variable _topology_cv;
   std::mutex _topology_mutex;
   size_t _num_topologies {0};
+  std::atomic<bool> _done {0};
 #endif
+
   
   std::unordered_map<std::thread::id, size_t> _wids;
-  std::vector<std::thread> _threads;
-  std::vector<Worker> _workers;
   std::list<Taskflow> _taskflows;
 
-  Notifier _notifier;
-
   TaskQueue<Node*> _wsq;
-
-  std::atomic<bool> _done {0};
 
   std::unordered_set<std::shared_ptr<ObserverInterface>> _observers;
 
@@ -1098,6 +1099,7 @@ class Executor {
   
   template <typename P>
   void _corun_until(Worker&, P&&);
+
 };
 
 // Constructor
@@ -1105,7 +1107,8 @@ inline Executor::Executor(size_t N) :
   _MAX_STEALS {((N+1) << 1)},
   _threads    {N},
   _workers    {N},
-  _notifier   {N} {
+  _notifier   {N} 
+{
 
   if(N == 0) {
     TF_THROW("executor must define at least one worker");
@@ -1126,11 +1129,15 @@ inline Executor::~Executor() {
   wait_for_all();
 
   // shut down the scheduler
+
+#ifdef __cpp_lib_atomic_wait
+  _done.test_and_set(std::memory_order_relaxed);
+#else
   _done = true;
+#endif
+  _notifier.notify_all();
 
-  _notifier.notify(true);
-
-  for(auto& t : _threads){
+  for(auto& t : _threads) {
     t.join();
   }
 }
@@ -1170,6 +1177,8 @@ inline int Executor::this_worker_id() const {
 inline void Executor::_spawn(size_t N) {
 
 #ifdef __cpp_lib_atomic_wait
+  // we cannot declare _all_spawned here because the main thread
+  // may finish real quick before other threads access _all_spawned
 #else
   std::mutex mutex;
   std::condition_variable cond;
@@ -1182,16 +1191,13 @@ inline void Executor::_spawn(size_t N) {
     _workers[id]._vtm = id;
     _workers[id]._executor = this;
     _workers[id]._waiter = &_notifier._waiters[id];
-
     _threads[id] = std::thread([&, &w=_workers[id]] () {
 
 #ifdef __cpp_lib_atomic_wait
       // wait for the caller thread to initialize the ID mapping
       _all_spawned.wait(false, std::memory_order_acquire);
-      w._thread = &_threads[w._id];
 #else
       // update the ID mapping of this thread
-      w._thread = &_threads[w._id];
       {
         std::scoped_lock lock(mutex);
         _wids[std::this_thread::get_id()] = w._id;
@@ -1309,7 +1315,13 @@ inline void Executor::_explore_task(Worker& w, Node*& t) {
     }
 
     w._vtm = rdvtm(w._rdgen);
-  } while(!_done);
+  } 
+#ifdef __cpp_lib_atomic_wait
+  // the _DONE can be checked later in wait_for_task?
+  while(!_done.test(std::memory_order_relaxed));
+#else
+  while(!_done);
+#endif
 
 }
 
@@ -1327,14 +1339,18 @@ inline bool Executor::_wait_for_task(Worker& worker, Node*& t) {
   explore_task:
 
   _explore_task(worker, t);
+
+  if(t) {
+    return true;
+  }
   
   // The last thief who successfully stole a task will wake up
   // another thief worker to avoid starvation.
-  if(t) {
-    _notifier.notify(false);
-    return true;
-  }
-
+//  if(t) {
+//    _notifier.notify_one();
+//    return true;
+//  }
+  
   // ---- 2PC guard ----
   _notifier.prepare_wait(worker._waiter);
 
@@ -1343,10 +1359,14 @@ inline bool Executor::_wait_for_task(Worker& worker, Node*& t) {
     worker._vtm = worker._id;
     goto explore_task;
   }
-  
+
+#ifdef __cpp_lib_atomic_wait
+  if(_done.test(std::memory_order_relaxed)) {
+#else
   if(_done) {
+#endif
     _notifier.cancel_wait(worker._waiter);
-    _notifier.notify(true);
+    _notifier.notify_all();
     return false;
   }
   
@@ -1362,8 +1382,8 @@ inline bool Executor::_wait_for_task(Worker& worker, Node*& t) {
   
   // Now I really need to relinguish my self to others
   _notifier.commit_wait(worker._waiter);
-
   goto explore_task;
+
 }
 
 // Function: make_observer
@@ -1417,7 +1437,7 @@ inline void Executor::_schedule(Worker& worker, Node* node) {
   // has shown no significant advantage.
   if(worker._executor == this) {
     worker._wsq.push(node, p);
-    _notifier.notify(false);
+    _notifier.notify_one();
     return;
   }
 
@@ -1425,8 +1445,7 @@ inline void Executor::_schedule(Worker& worker, Node* node) {
     std::lock_guard<std::mutex> lock(_wsq_mutex);
     _wsq.push(node, p);
   }
-
-  _notifier.notify(false);
+  _notifier.notify_one();
 }
 
 // Procedure: _schedule
@@ -1444,7 +1463,7 @@ inline void Executor::_schedule(Node* node) {
     _wsq.push(node, p);
   }
 
-  _notifier.notify(false);
+  _notifier.notify_one();
 }
 
 // Procedure: _schedule
@@ -1469,7 +1488,7 @@ inline void Executor::_schedule(Worker& worker, const SmallVector<Node*>& nodes)
       auto p = nodes[i]->_priority;
       nodes[i]->_state.fetch_or(Node::READY, std::memory_order_release);
       worker._wsq.push(nodes[i], p);
-      _notifier.notify(false);
+      _notifier.notify_one();
     }
     return;
   }
@@ -1482,7 +1501,6 @@ inline void Executor::_schedule(Worker& worker, const SmallVector<Node*>& nodes)
       _wsq.push(nodes[k], p);
     }
   }
-
   _notifier.notify_n(num_nodes);
 }
 
@@ -1525,16 +1543,6 @@ inline void Executor::_invoke(Worker& worker, Node* node) {
   if(node->_is_cancelled()) {
     _tear_down_invoke(worker, node);
     return;
-  }
-
-  // if acquiring semaphore(s) exists, acquire them first
-  if(node->_semaphores && !node->_semaphores->to_acquire.empty()) {
-    SmallVector<Node*> nodes;
-    if(!node->_acquire_all(nodes)) {
-      _schedule(worker, nodes);
-      return;
-    }
-    node->_state.fetch_or(Node::ACQUIRED, std::memory_order_release);
   }
 
   // condition task
@@ -1599,11 +1607,6 @@ inline void Executor::_invoke(Worker& worker, Node* node) {
 
   //invoke_successors:
 
-  // if releasing semaphores exist, release them
-  if(node->_semaphores && !node->_semaphores->to_release.empty()) {
-    _schedule(worker, node->_release_all());
-  }
-  
   // Reset the join counter to support the cyclic control flow.
   // + We must do this before scheduling the successors to avoid race
   //   condition on _dependents.
@@ -1696,8 +1699,7 @@ inline void Executor::_tear_down_invoke(Worker& worker, Node* node) {
       _tear_down_topology(worker, node->_topology);
     }
   }
-  // Here we asssume the parent is in a busy loop (e.g., corun) waiting for
-  // its join counter to become 0.
+  // The parent is in a corun loop waiting for its join counter to reach 0.
   else {
     //parent->_join_counter.fetch_sub(1, std::memory_order_acq_rel);
     parent->_join_counter.fetch_sub(1, std::memory_order_release);
@@ -2176,7 +2178,7 @@ inline void Executor::_tear_down_topology(Worker& worker, Topology* tpg) {
   // case 2: the final run of this topology
   else {
 
-    // TODO: if the topology is cancelled, need to release all semaphores
+    // invoke the callback after each run
     if(tpg->_call != nullptr) {
       tpg->_call();
     }
@@ -2190,7 +2192,7 @@ inline void Executor::_tear_down_topology(Worker& worker, Topology* tpg) {
       f._topologies.pop();
       tpg = f._topologies.front().get();
 
-      // decrement the topology but since this is not the last we don't notify
+      // decrement the topology
       _decrement_topology();
 
       // set up topology needs to be under the lock or it can
@@ -2298,6 +2300,48 @@ inline void Runtime::corun_all() {
   _parent->_process_exception();
 }
 
+// ----------------------------------------------------------------------------
+// Runtime: Semaphore series
+// ----------------------------------------------------------------------------
+
+// Function: acquire
+template <typename... S,
+  std::enable_if_t<all_same_v<Semaphore, std::decay_t<S>...>, void>*
+>
+void Runtime::acquire(S&&... semaphores) {
+  _executor._corun_until(_worker, [&](){ 
+    return tf::try_acquire(std::forward<S>(semaphores)...); 
+  });
+  // TODO: exception?
+}
+  
+// Function:: acquire
+template <typename I,
+  std::enable_if_t<std::is_same_v<deref_t<I>, Semaphore>, void>*
+>
+void Runtime::acquire(I first, I last) {
+  _executor._corun_until(_worker, [=](){ 
+    return tf::try_acquire(first, last); 
+  });
+  // TODO: exception?
+}
+
+// Function: release
+template <typename... S,
+  std::enable_if_t<all_same_v<Semaphore, std::decay_t<S>...>, void>*
+>
+void Runtime::release(S&&... semaphores){
+  tf::release(std::forward<S>(semaphores)...);
+}
+
+// Function:: release
+template <typename I,
+  std::enable_if_t<std::is_same_v<deref_t<I>, Semaphore>, void>*
+>
+void Runtime::release(I begin, I end) {
+  tf::release(begin, end);
+}
+
 // Destructor
 inline Runtime::~Runtime() {
   _executor._corun_until(_worker, [this] () -> bool { 
@@ -2315,7 +2359,7 @@ void Runtime::_silent_async(Worker& w, P&& params, F&& f) {
 
   _parent->_join_counter.fetch_add(1, std::memory_order_relaxed);
 
-  auto node = node_pool.animate(
+  auto node = animate(
     std::forward<P>(params), _parent->_topology, _parent, 0,
     std::in_place_type_t<Node::Async>{}, std::forward<F>(f)
   );
@@ -2362,7 +2406,7 @@ auto Runtime::_async(Worker& w, P&& params, F&& f) {
   std::packaged_task<R()> p(std::forward<F>(f));
   auto fu{p.get_future()};
 
-  auto node = node_pool.animate(
+  auto node = animate(
     std::forward<P>(params), _parent->_topology, _parent, 0, 
     std::in_place_type_t<Node::Async>{},
     [p=make_moc(std::move(p))] () mutable { p.object(); }
@@ -2384,6 +2428,9 @@ template <typename P, typename F>
 auto Runtime::async(P&& params, F&& f) {
   return _async(*_executor._this_worker(), std::forward<P>(params), std::forward<F>(f));
 }
+
+
+
 
 
 
