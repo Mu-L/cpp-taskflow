@@ -8,6 +8,7 @@ var concepts =
       [ "StringLike", "concepttf_1_1StringLike.html", null ],
       [ "TaskParamsLike", "concepttf_1_1TaskParamsLike.html", null ],
       [ "GraphLike", "concepttf_1_1GraphLike.html", null ],
+      [ "BoundedWSQLike", "concepttf_1_1BoundedWSQLike.html", null ],
       [ "UnaryOperationLike", "concepttf_1_1UnaryOperationLike.html", null ],
       [ "BinaryOperationLike", "concepttf_1_1BinaryOperationLike.html", null ],
       [ "UnaryTransformLike", "concepttf_1_1UnaryTransformLike.html", null ],

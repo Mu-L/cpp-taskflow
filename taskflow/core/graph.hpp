@@ -163,7 +163,7 @@ enum class TaskPriority : unsigned {
 // ----------------------------------------------------------------------------
 
 /**
-@brief concept that determines if a type is string-like
+@brief concept to check if a type is convertible to std::string_view
 
 A type satisfies tf::StringLike if it is convertible to std::string_view, including:
   + std::string
@@ -217,7 +217,7 @@ class TaskParams {
 class DefaultTaskParams {};
 
 /**
-@brief concept that determines if a type is a task parameter type
+@brief concept to check if a type is a task parameter
 
 A type satisfies tf::TaskParams if it is one of the following:
   + tf::TaskParams
@@ -266,13 +266,11 @@ class NodeBase {
   
   public:
 
-  size_t priority() const {
 #ifdef TF_ENABLE_TASK_PRIORITY
+  size_t priority() const {
     return static_cast<size_t>((_nstate & NSTATE::PRIORITY_MASK) >> NSTATE::PRIORITY_SHIFT);
-#else
-    return 0;
-#endif
   }
+#endif
 
   protected:
 
@@ -293,12 +291,12 @@ class NodeBase {
     _join_counter {join_counter} {
   }
 
-  void _set_priority([[maybe_unused]] TaskPriority p) {
 #ifdef TF_ENABLE_TASK_PRIORITY
+  void _set_priority([[maybe_unused]] TaskPriority p) {
     nstate_t encoded = (static_cast<nstate_t>(p)) << NSTATE::PRIORITY_SHIFT;
     _nstate = (_nstate & ~NSTATE::PRIORITY_MASK) | encoded;
-#endif
   }
+#endif
   
   void _rethrow_exception() {
     if(_exception_ptr) {
@@ -1039,7 +1037,7 @@ Node* Graph::_emplace_back(ArgsT&&... args) {
 
 
 /**
-@brief concept that determines if a type owns or provides access to a tf::Graph
+@brief concept to check if a type owns or provides access to a tf::Graph
 
 A type satisfies @c tf::GraphLike if it meets one of the following two criteria:
   + **Inheritance**: The type is derived from @c tf::Graph.

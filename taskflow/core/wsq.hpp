@@ -885,7 +885,7 @@ constexpr size_t BoundedWSQ<T, LogSize>::capacity() const {
 // ----------------------------------------------------------------------------
 
 /**
-@brief concept that constrains a type to behave like a bounded work-stealing queue
+@brief concept to check if a type supports bounded work-stealing queue operations
 
 A type @c Q satisfies @c BoundedWSQLike if it exposes the three core operations
 required by a bounded work-stealing queue: owner-side pop, thief-side steal, and
@@ -926,6 +926,8 @@ concept BoundedWSQLike = requires(Q& q, typename Q::value_type v) {
 // ----------------------------------------------------------------------------
 
 /**
+@private
+
 @brief default priority function for BoundedPriorityWSQ
 
 Calls `T::priority()` on the element and returns the result as

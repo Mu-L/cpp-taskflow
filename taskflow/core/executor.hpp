@@ -2443,7 +2443,7 @@ inline size_t Executor::_set_up_graph(Graph& graph, Topology* tpg, NodeBase* par
     node->_topology = tpg;
     node->_parent = parent;
 #ifdef TF_ENABLE_TASK_PRIORITY
-    node->_nstate &= NSTATE::CLEAR_MASK;
+    node->_nstate &= NSTATE::PRIORITY_MASK;
 #else
     node->_nstate &= NSTATE::NONE;
 #endif

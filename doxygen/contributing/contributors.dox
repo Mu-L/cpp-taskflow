@@ -88,6 +88,7 @@ We are grateful for the following contributors (alphabetic order) to the %Taskfl
   @li <a href="https://github.com/Ya-Za">Yasin Zamani</a>: benchmarked the parallel sort with the TBB baseline
   @li <a href="http://yibolin.com/">Yibo Lin</a>: helped design the interface of conditional tasking
   @li <a href="https://github.com/QiuYilin">Yilin Qiu</a>: helped implement the dependency removal methods in %Taskflow
+  @li <a href="https://github.com/pengyk">Yun Kai Peng</a>: implemented a priority-based scheduling interface
   @li <a href="https://github.com/yumeno-yan">Yumeno Yan</a>: fixed the C++ macro error in the MSVC environment
   @li <a href="https://github.com/weilewei">Weile</a>: helped added %Taskflow to the compiler explorer interface
   @li <a href="https://guozz.cn/">Zizheng Guo</a>: applied %Taskflow to speed up VLSI timing analysis and shared his feedback

@@ -3,10 +3,6 @@
 
 #include <doctest.h>
 #include <taskflow/taskflow.hpp>
-#include <vector>
-#include <string>
-#include <algorithm>
-#include <numeric>
 
 
 // ============================================================================

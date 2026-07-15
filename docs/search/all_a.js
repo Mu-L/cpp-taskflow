@@ -159,12 +159,13 @@ var searchData=
   ['asynchronous_20tasks_156',['Launch Asynchronous Tasks',['../index.html#QuickStartLaunchAsyncTasks',1,'']]],
   ['asynchronous_20tasks_20with_20cooperative_20execution_157',['Submit Asynchronous Tasks with Cooperative Execution',['../TaskGroup.html#SubmitAsynchronousTasksWithCooperativeExecution',1,'']]],
   ['asynctask_158',['AsyncTask',['../classtf_1_1AsyncTask.html',1,'tf::AsyncTask'],['../classtf_1_1AsyncTask.html#a68689c79c7d794a8be2e1c181c818001',1,'tf::AsyncTask::AsyncTask()=default'],['../classtf_1_1AsyncTask.html#a682bc679a773da5e45714f71c8137f70',1,'tf::AsyncTask::AsyncTask(const AsyncTask &amp;rhs)'],['../classtf_1_1AsyncTask.html#a5a31f85d2ee542f62e784d551ec78896',1,'tf::AsyncTask::AsyncTask(AsyncTask &amp;&amp;rhs)']]],
-  ['at_20compile_20time_159',['Disable Exception Handling at Compile Time',['../ExceptionHandling.html#DisableExceptionHandling',1,'']]],
-  ['at_20the_20join_20point_160',['The Task Race at the Join Point',['../ExamplesMakeGraph.html#MakeGraphPitfall',1,'']]],
-  ['atomic_5fmax_161',['atomic_max',['../namespacetf.html#a5002af34dc323ff28e87ae83203b2c36',1,'tf']]],
-  ['atomic_5fmin_162',['atomic_min',['../namespacetf.html#a512ffa0d24a237b098f5de656b8bdcb0',1,'tf']]],
-  ['attach_20custom_20data_20to_20a_20task_20and_20access_20it_163',['Q12: How can I attach custom data to a task and access it?',['../FAQ.html#ProgrammingQuestions12',1,'']]],
-  ['attach_20user_20data_20to_20a_20task_164',['Attach User Data to a Task',['../StaticTasking.html#AttachUserDataToATask',1,'']]],
-  ['auxiliary_20join_20task_20pattern_165',['The Auxiliary Join Task Pattern',['../ExamplesMakeGraph.html#MakeGraphJoinTask',1,'']]],
-  ['avoid_20common_20pitfalls_166',['Avoid Common Pitfalls',['../ConditionalTasking.html#AvoidCommonPitfalls',1,'']]]
+  ['asynctaskhandlelike_159',['AsyncTaskHandleLike',['../concepttf_1_1AsyncTaskHandleLike.html',1,'tf']]],
+  ['at_20compile_20time_160',['Disable Exception Handling at Compile Time',['../ExceptionHandling.html#DisableExceptionHandling',1,'']]],
+  ['at_20the_20join_20point_161',['The Task Race at the Join Point',['../ExamplesMakeGraph.html#MakeGraphPitfall',1,'']]],
+  ['atomic_5fmax_162',['atomic_max',['../namespacetf.html#a5002af34dc323ff28e87ae83203b2c36',1,'tf']]],
+  ['atomic_5fmin_163',['atomic_min',['../namespacetf.html#a512ffa0d24a237b098f5de656b8bdcb0',1,'tf']]],
+  ['attach_20custom_20data_20to_20a_20task_20and_20access_20it_164',['Q12: How can I attach custom data to a task and access it?',['../FAQ.html#ProgrammingQuestions12',1,'']]],
+  ['attach_20user_20data_20to_20a_20task_165',['Attach User Data to a Task',['../StaticTasking.html#AttachUserDataToATask',1,'']]],
+  ['auxiliary_20join_20task_20pattern_166',['The Auxiliary Join Task Pattern',['../ExamplesMakeGraph.html#MakeGraphJoinTask',1,'']]],
+  ['avoid_20common_20pitfalls_167',['Avoid Common Pitfalls',['../ConditionalTasking.html#AvoidCommonPitfalls',1,'']]]
 ];

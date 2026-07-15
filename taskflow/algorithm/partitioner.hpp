@@ -898,7 +898,7 @@ for most parallel algorithms.
 using DefaultPartitioner = GuidedPartitioner<>;
 
 /**
-@brief determines if a type is a partitioner
+@brief concept to check if a type is a partitioner
 
 A type satisfies tf::PartitionerLike if it is derived from tf::PartitionerBase.
 */
@@ -906,7 +906,7 @@ template <typename P>
 concept PartitionerLike = std::derived_from<P, PartitionerBase<typename P::closure_wrapper_type>>;
 
 /**
-@brief determines if a type is a partitioner (variable template)
+@brief concept to check if a type is a partitioner (variable template)
 
 @tparam P type to check
 

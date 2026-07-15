@@ -86,7 +86,7 @@ inline const char* to_string(TaskType type) {
 // ----------------------------------------------------------------------------
 
 /**
-@brief determines if a callable is a static task
+@brief concept to check if a callable is a static task
 
 A static task is a callable object that takes no arguments and returns void.
 It is constructible from std::function<void()>.
@@ -141,7 +141,7 @@ concept StaticTaskLike = std::invocable<C> &&
                          std::same_as<std::invoke_result_t<C>, void>;
 
 /**
-@brief determines if a callable is a static task (variable template)
+@brief concept to check if a callable is a static task (variable template)
 
 @tparam C callable type to check
 
@@ -155,7 +155,7 @@ constexpr bool is_static_task_v = StaticTaskLike<C>;
 // ----------------------------------------------------------------------------
 
 /**
-@brief determines if a callable is a subflow task
+@brief concept to check if a callable is a subflow task
 
 A subflow task is a callable object that takes a tf::Subflow& reference and returns void.
 Subflow tasks allow dynamic creation of nested tasks at runtime. It is constructible
@@ -221,7 +221,7 @@ concept SubflowTaskLike = std::invocable<C, tf::Subflow&> &&
                           std::same_as<std::invoke_result_t<C, tf::Subflow&>, void>;
 
 /**
-@brief determines if a callable is a subflow task (variable template)
+@brief concept to check if a callable is a subflow task (variable template)
 
 @tparam C callable type to check
 
@@ -235,7 +235,7 @@ constexpr bool is_subflow_task_v = SubflowTaskLike<C>;
 // ----------------------------------------------------------------------------
 
 /**
-@brief determines if a callable is a runtime task
+@brief concept to check if a callable is a runtime task
 
 A runtime task is a callable object that accepts either tf::Runtime& or
 tf::NonpreemptiveRuntime& and returns void. Runtime tasks provide access to
@@ -307,7 +307,7 @@ concept RuntimeTaskLike =
    std::same_as<std::invoke_result_t<C, tf::NonpreemptiveRuntime&>, void>);
 
 /**
-@brief determines if a callable is a runtime task (variable template)
+@brief concept to check if a callable is a runtime task (variable template)
 
 @tparam C callable type to check
 
@@ -322,7 +322,7 @@ constexpr bool is_runtime_task_v = RuntimeTaskLike<C>;
 // ----------------------------------------------------------------------------
 
 /**
-@brief determines if a callable is a condition task
+@brief concept to check if a callable is a condition task
 
 A condition task is a callable object that takes no arguments and returns a
 value convertible to int. The returned int value controls which successor branch
@@ -398,7 +398,7 @@ concept ConditionTaskLike = std::invocable<C> &&
                             std::convertible_to<std::invoke_result_t<C>, int>;
 
 /**
-@brief determines if a callable is a condition task (variable template)
+@brief concept to check if a callable is a condition task (variable template)
 
 @tparam C callable type to check
 
@@ -495,7 +495,7 @@ concept MultiConditionTaskLike = std::invocable<C> &&
                                  std::same_as<std::invoke_result_t<C>, SmallVector<int>>;
 
 /**
-@brief determines if a callable is a multi-condition task (variable template)
+@brief concept to check if a callable is a multi-condition task (variable template)
 
 @tparam C callable type to check
 
@@ -998,6 +998,7 @@ class Task {
 
   */
   Task& data(void* data);
+
 
   /**
   @brief assigns a priority level to the task
@@ -1568,16 +1569,23 @@ inline Task& Task::data(void* data) {
   return *this;
 }
 
+
 // Function: priority
 inline TaskPriority Task::priority() const {
+#ifdef TF_ENABLE_TASK_PRIORITY
   // priority bits are stored directly as the TaskPriority value
   // (HIGH=0, NORMAL=1, LOW=2); an unset priority reads back as HIGH
   return static_cast<TaskPriority>(_node->priority());
+#else
+  return TaskPriority::HIGH;
+#endif
 }
 
 // Function: priority
-inline Task& Task::priority(TaskPriority p) {
+inline Task& Task::priority([[maybe_unused]] TaskPriority p) {
+#ifdef TF_ENABLE_TASK_PRIORITY
   _node->_set_priority(p);
+#endif
   return *this;
 }
 

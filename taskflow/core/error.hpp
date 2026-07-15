@@ -29,9 +29,6 @@ struct NSTATE {
   // mask to isolate state bits - non-state bits store # strong dependents
   // (2 fewer bits than baseline to make room for the priority bits above)
   constexpr static underlying_type STRONG_DEPENDENCIES_MASK = 0x03FFFFFF;
-
-  // mask to clear the state while preserving the priority bits across topology reuse
-  constexpr static underlying_type CLEAR_MASK          = PRIORITY_MASK;
 #else
   // mask to isolate state bits - non-state bits store # strong dependents
   constexpr static underlying_type STRONG_DEPENDENCIES_MASK = 0x0FFFFFFF;
